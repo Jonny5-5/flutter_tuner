@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'flutter_tuner_platform_interface.dart';
 
 /// An implementation of [FlutterTunerPlatform] that uses method channels.
-class MethodChannelFlutterTuner implements FlutterTunerPlatform {
+class MethodChannelFlutterTuner extends FlutterTunerPlatform {
   @visibleForTesting
   static const methodChannel = MethodChannel('flutter_tuner');
 

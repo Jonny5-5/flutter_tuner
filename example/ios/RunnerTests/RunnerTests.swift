@@ -11,14 +11,14 @@ import XCTest
 
 class RunnerTests: XCTestCase {
 
-  func testGetPlatformVersion() {
+  func testUnknownMethodIsNotImplemented() {
     let plugin = FlutterTunerPlugin()
 
-    let call = FlutterMethodCall(methodName: "getPlatformVersion", arguments: [])
+    let call = FlutterMethodCall(methodName: "notAPluginMethod", arguments: nil)
 
     let resultExpectation = expectation(description: "result block must be called.")
     plugin.handle(call) { result in
-      XCTAssertEqual(result as! String, "iOS " + UIDevice.current.systemVersion)
+      XCTAssertTrue((result as? NSObject) === FlutterMethodNotImplemented)
       resultExpectation.fulfill()
     }
     waitForExpectations(timeout: 1)

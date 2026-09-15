@@ -245,6 +245,28 @@ static void test_pure_sines_int16() {
   }
 }
 
+// Android captures signed 16-bit mono PCM at 16 kHz.  Keep this separate
+// from the 44.1 kHz sweep above so a regression in the JNI input path is
+// caught using the exact format the Android Tuner supplies to C++.
+static void test_android_pcm16_input() {
+  std::cout << "\n=== Android 16 kHz PCM16 input ===" << std::endl;
+  const int androidSampleRate = 16000;
+  TunerCPP tuner(androidSampleRate, BUFFER_SIZE);
+  int16_t buf[BUFFER_SIZE];
+
+  double freqs[] = {65.41, 110.0, 220.0, 440.0};
+  for (double freq : freqs) {
+    for (int i = 0; i < BUFFER_SIZE; ++i) {
+      buf[i] = static_cast<int16_t>(
+          0.9 * 32767.0 * std::sin(2.0 * M_PI * freq * i / androidSampleRate));
+    }
+    char label[80];
+    snprintf(label, sizeof(label), "16 kHz PCM16 %.2f Hz", freq);
+    ASSERT_NEAR(tuner.findFrequency(buf, BUFFER_SIZE), freq, freq * 0.02,
+                label);
+  }
+}
+
 // --- 5. Harmonics (1st-4th) — fundamental should still win --------
 
 static void test_harmonics_float() {
@@ -406,6 +428,10 @@ int main() {
 
   // 5. Harmonics
   test_harmonics_float();
+
+  // 5a. The int16 overload and Android's production capture format.
+  test_pure_sines_int16();
+  test_android_pcm16_input();
 
   // 6. Edge cases
   test_edge_cases();

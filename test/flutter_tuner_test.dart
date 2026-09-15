@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_tuner/flutter_tuner.dart';
 import 'package:flutter_tuner/flutter_tuner_platform_interface.dart';
@@ -9,6 +11,7 @@ class MockFlutterTunerPlatform
     implements FlutterTunerPlatform {
   bool startTuningCalled = false;
   bool stopTuningCalled = false;
+  final StreamController<double> frequencies = StreamController<double>();
 
   @override
   Future<void> startTuning() async {
@@ -21,11 +24,15 @@ class MockFlutterTunerPlatform
   }
 
   @override
-  Stream<double> get frequencyStream => Stream.empty();
+  Stream<double> get frequencyStream => frequencies.stream;
 }
 
 void main() {
   final FlutterTunerPlatform initialPlatform = FlutterTunerPlatform.instance;
+
+  tearDown(() {
+    FlutterTunerPlatform.instance = initialPlatform;
+  });
 
   test('$MethodChannelFlutterTuner is the default instance', () {
     expect(initialPlatform, isInstanceOf<MethodChannelFlutterTuner>());
@@ -47,5 +54,16 @@ void main() {
 
     await flutterTunerPlugin.stopTuning();
     expect(fakePlatform.stopTuningCalled, true);
+  });
+
+  test('frequencyStream is delegated to the platform implementation', () async {
+    FlutterTunerPlatform.instance = MockFlutterTunerPlatform();
+    final fakePlatform = FlutterTunerPlatform.instance as MockFlutterTunerPlatform;
+    addTearDown(fakePlatform.frequencies.close);
+
+    final frequency = FlutterTuner().frequencyStream.first;
+    fakePlatform.frequencies.add(440.0);
+
+    expect(await frequency, 440.0);
   });
 }
