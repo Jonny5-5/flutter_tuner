@@ -78,9 +78,16 @@ class Tuner(private val callback: (Double) -> Unit) {
             try {
                 val sData = ShortArray(BUFFER_SIZE)
                 val shortsRead = currentRecorder.read(sData, 0, BUFFER_SIZE)
-                if (shortsRead > 0) {
+                // The C++ implementation analyses one complete FFT window.
+                // Passing a partially-filled ShortArray would silently append
+                // zeroes and can yield a false pitch, so wait for the next
+                // callback instead.
+                if (shortsRead == BUFFER_SIZE) {
                     val freq = findFrequencyJNI(currentTunerPtr, sData)
                     callback(freq)
+                } else if (shortsRead < 0) {
+                    Log.e(TAG, "AudioRecord read failed: $shortsRead")
+                    callback(ERROR_FREQUENCY)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Error in processAudio: ${e.message}")
